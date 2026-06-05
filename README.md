@@ -1,53 +1,85 @@
-# Media Station X - Cloudflare Worker / Quickstart
------------------------------------------------------
+# MediathekViewWeb MSX on Cloudflare Workers
 
+Cloudflare Worker that exposes a documentary-focused Media Station X
+start/menu/content API for MediathekViewWeb search results.
 
- * Get a stable & free place for your Media Station X JSON or service files.
- * Incredible fast & stable
- * Dont care about SSL & CORS
+## Endpoints
 
+- `/` - small browser landing page with launch links
+- `/health` - JSON endpoint checklist
+- `/msx/start.json` - MSX Start Object
+- `/msx/menu.json` - MSX Menu Root Object
+- `/msx/search` - dynamic MSX Content Root Object from MediathekViewWeb results
+- `/msx/search-action` - legacy `execute:code` handler for older clients
+- `/msx/play` - `execute` handler that returns a `video:{URL}` action
+- `/msx/resolve` - `video:resolve` compatible handler
+- `/api/query` - optional MediathekViewWeb query proxy
 
-![nf9Rheg.png](https://i.imgur.com/nf9Rheg.png)
+## Local Checks
 
+This project does not require a build step. The Worker is a JavaScript module.
 
-
-## Usage
-
-
-* Deploy it with Wrangler or use [workers.dev](https://workers.dev)
-* Hint: I use [Google Cloud Shell](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/dbiesecke/msx-quickstart-cloudflare)
-
-
+```bash
+node --check index.js
+node --test
 ```
-wrangler generate msx-quick https://github.com/dbiesecke/msx-quickstart-cloudflare
 
+## Cloudflare Deployment
+
+Wrangler's current Worker config requires `name`, `main`, and
+`compatibility_date` in `wrangler.toml`.
+
+```bash
+npx --yes wrangler@latest whoami
+npx --yes wrangler@latest dev
+npx --yes wrangler@latest deploy
 ```
 
-* Change the Variable `WORKER_DNS` & fit the menu Json to your needs
+If the local machine has no `npm`/`npx`, install Wrangler through the normal
+Cloudflare workflow on the deploy machine, or run the commands in an environment
+that has Node.js and npm available.
 
- ![i0cOymy.png](https://i.imgur.com/i0cOymy.png)
- 
+After deployment, configure Media Station X with:
 
-* Now publish it `wrangler publish`
+```text
+https://<worker-host>/msx/start.json
+```
 
+Or launch in the browser with:
 
-![ZFWr6lc.png](https://i.imgur.com/ZFWr6lc.png)
+```text
+https://msx.benzac.de/?start=menu:https://<worker-host>/msx/menu.json
+```
 
+## Research Summary
 
+MSX is driven by JSON, not by scraping or mirroring the HTML website. The Worker
+therefore serves the full MSX surface directly:
 
+- Start Object points MSX to `/msx/menu.json`.
+- Menu Root Object exposes a Doku search, Doku sender tiles, Doku presets, info,
+  and settings entries.
+- Search uses the MSX Input Plugin with `type=search`, so normal text input is
+  available instead of the numeric `execute:code` keyboard.
+- Content Root Objects are generated dynamically from MediathekViewWeb results.
+- The "Neue Dokus nach Sendern" preset adds `group=channel` and inserts sender
+  headers before the result items.
+- Result items and sender headers are enriched with logos from
+  `tv-logo/tv-logos` under `countries/germany`.
+- Server Actions are wrapped as `{"response": {"status": 200, ...}}`, as MSX
+  expects for `execute:*` and `resolve` workflows.
+- MediathekViewWeb search uses `POST /api/query` with JSON text containing
+  `queries`, `sortBy`, `sortOrder`, `future`, `offset`, and `size`.
+- Worker responses add CORS headers and cache GET search transformations for a
+  short time while keeping interactive server actions uncached.
 
+Primary references:
 
-### Usage: 
-
-![xbnkXch.png](https://i.imgur.com/xbnkXch.png)
-
-* Hint: iOS needs SSL 
-
-![6hDEatt.png](https://i.imgur.com/6hDEatt.png)
-
-
-
-## Todo
---------------
-
- * Caching ( Todo!)
+- MSX Start Object: https://msx.benzac.de/wiki/index.php?title=Start_Object
+- MSX Menu Root Object: https://msx.benzac.de/wiki/index.php?title=Menu_Root_Object
+- MSX Content Root Object: https://msx.benzac.de/wiki/index.php?title=Content_Root_Object
+- MSX Input Plugin: https://www.msx.benzac.de/wiki/index.php?title=Input_Plugin
+- MSX Actions/Responses: https://msx.benzac.de/wiki/index.php?title=Actions
+- Cloudflare Workers config: https://developers.cloudflare.com/workers/wrangler/configuration/
+- MediathekViewWeb repository: https://github.com/mediathekview/mediathekviewweb
+- German TV logos: https://github.com/tv-logo/tv-logos/tree/main/countries/germany

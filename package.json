@@ -1,22 +1,16 @@
 {
   "private": true,
-  "name": "mytest-1",
+  "name": "cf-msx-mediathek",
   "version": "1.0.0",
-  "description": "A template for kick starting a Cloudflare Workers project",
+  "description": "Media Station X showcase for MediathekViewWeb on Cloudflare Workers",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --write '**/*.{js,css,json,md}'",
-    "build": "webpack"
+    "check": "node --check index.js",
+    "test": "node --test",
+    "dev": "npx --yes wrangler@latest dev",
+    "deploy": "npx --yes wrangler@latest deploy"
   },
-  "author": "dbiesecke <dbiesecke@gmail.com>",
   "license": "MIT",
-  "dependencies": {
-    "@cloudflare/wrangler": "^1.19.7",
-    "wrangler": "^0.0.4",
-    "xml-js": "*"
-  },
-  "devDependencies": {
-    "prettier": "^1.18.2"
-  }
+  "devDependencies": {}
 }

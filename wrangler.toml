@@ -1,8 +1,4 @@
-name = "msx-quick"
-type = "webpack"
-webpack_config = "webpack.config.js"
-
-account_id = "25169d5343500c4d212c73e2b92c6f33"
+name = "cf-msx-mediathek"
+main = "index.js"
+compatibility_date = "2026-06-05"
 workers_dev = true
-route = ""
-zone_id = ""
