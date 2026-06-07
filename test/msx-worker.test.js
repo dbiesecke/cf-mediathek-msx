@@ -243,6 +243,41 @@ describe("MSX worker routes", () => {
     assert.equal(response.status, 204);
     assert.equal(response.headers.get("Access-Control-Allow-Origin"), "*");
   });
+
+  it("filters query proxy scannedPages to stream pages only", async () => {
+    globalThis.fetch = async () =>
+      Response.json({
+        result: {
+          scannedPages: [
+            "https://www.fernsehserien.de/weltspiegel/streams",
+            "https://www.fernsehserien.de/ajax streams-entkuerzen",
+            "https://www.fernsehserien.de/ajax jetzt-ansehen",
+            "https://www.fernsehserien.de/alpha/streams/",
+            "/streams?debug=1",
+          ],
+          nested: {
+            scannedPages: [
+              "https://www.fernsehserien.de/weltspiegel/episoden",
+              "https://www.fernsehserien.de/weltspiegel/streams?staffel=1",
+            ],
+          },
+        },
+        err: null,
+      });
+
+    const response = await handleRequest(new Request("https://worker.example/api/query?q=doku"));
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body.result.scannedPages, [
+      "https://www.fernsehserien.de/weltspiegel/streams",
+      "https://www.fernsehserien.de/alpha/streams/",
+      "/streams?debug=1",
+    ]);
+    assert.deepEqual(body.result.nested.scannedPages, [
+      "https://www.fernsehserien.de/weltspiegel/streams?staffel=1",
+    ]);
+  });
 });
 
 describe("Mediathek query builder", () => {

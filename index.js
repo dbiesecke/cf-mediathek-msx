@@ -735,7 +735,7 @@ async function handleQueryProxy(request) {
   }
 
   const upstream = await fetchMediathek(query);
-  return jsonResponse(upstream, { cacheSeconds: request.method === "GET" ? SEARCH_CACHE_SECONDS : 0 });
+  return jsonResponse(sanitizeScannedPages(upstream), { cacheSeconds: request.method === "GET" ? SEARCH_CACHE_SECONDS : 0 });
 }
 
 export function buildMediathekQuery(searchParams) {
@@ -1125,6 +1125,42 @@ function parseMaybeJson(value) {
   } catch {
     return value;
   }
+}
+
+function sanitizeScannedPages(value) {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeScannedPages);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => {
+      if (key === "scannedPages" && Array.isArray(item)) {
+        return [key, item.filter(isStreamsScanPage)];
+      }
+      return [key, sanitizeScannedPages(item)];
+    }),
+  );
+}
+
+function isStreamsScanPage(value) {
+  const page = cleanString(value);
+  if (!page) return false;
+
+  try {
+    const url = new URL(page, "https://www.fernsehserien.de");
+    return isStreamsPath(url.pathname);
+  } catch {
+    return isStreamsPath(page.split(/[?#]/, 1)[0]);
+  }
+}
+
+function isStreamsPath(pathname) {
+  const path = cleanString(pathname).replace(/\/+$/g, "");
+  return path === "/streams" || path.endsWith("/streams");
 }
 
 function msxResponse(status, text, data = null, message = null) {
