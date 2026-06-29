@@ -1343,16 +1343,6 @@ function buildItemOptions(request, item) {
     });
   }
 
-  items.push({
-    id: "resolve-test",
-    icon: "settings",
-    label: "Resolve",
-    action: `video:resolve:${absoluteUrl(request, "/msx/resolve", {
-      url: item.selectedUrl,
-      label: item.title,
-    })}`,
-  });
-
   return {
     caption: "Optionen",
     template: TEMPLATES.optionControl,

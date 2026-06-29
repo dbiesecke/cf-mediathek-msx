@@ -209,7 +209,6 @@ describe("MSX worker routes", () => {
         "more-from-channel",
         "more-about-topic",
         "open-website",
-        "resolve-test",
       ],
     );
     assert.match(
