@@ -118,7 +118,7 @@ describe("MSX worker routes", () => {
     assert.equal(body.parameter, "menu:https://worker.example/msx/menu.json");
   });
 
-  it("builds a menu with search and preset content URLs", async () => {
+  it("builds a menu with primary navigation entries", async () => {
     const response = await handleRequest(new Request("https://worker.example/msx/menu.json"));
     const body = await response.json();
 
@@ -129,10 +129,15 @@ describe("MSX worker routes", () => {
     assert.match(body.menu[0].data.items[0].action, /topic(%2C|,)title(%2C|,)description/);
     assert.match(body.menu[0].data.items[0].action, /q=\{INPUT\}\+%3E15/);
     assert.doesNotMatch(body.menu[0].data.items[0].action, /duration_min=15/);
-    assert.match(body.menu.find((item) => item.id === "latest").data, /group=channel/);
+    assert.equal(body.menu.map((item) => item.id).join(","), "search,channels,topics,latest,favorites,settings");
+    assert.match(body.menu.find((item) => item.id === "latest").data, /sort=timestamp/);
+    assert.match(body.menu.find((item) => item.id === "latest").data, /order=desc/);
+    assert.match(body.menu.find((item) => item.id === "latest").data, /size=36/);
     assert.match(body.menu.find((item) => item.id === "latest").data, /q=doku\+%3E20/);
+    assert.doesNotMatch(body.menu.find((item) => item.id === "latest").data, /group=channel/);
     assert.doesNotMatch(body.menu.find((item) => item.id === "latest").data, /duration_min=20/);
-    assert.ok(body.menu.find((item) => item.id === "docu-channels"));
+    assert.ok(body.menu.find((item) => item.id === "topics").data.items.length > 0);
+    assert.ok(body.menu.find((item) => item.id === "favorites").data.items[0].id === "favorites-placeholder");
   });
 
   it("queries MediathekViewWeb and maps results to MSX content", async () => {

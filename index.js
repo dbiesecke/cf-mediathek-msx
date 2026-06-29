@@ -446,35 +446,45 @@ export function buildMenu(request) {
       {
         id: "search",
         icon: "search",
-        label: "Doku Suche",
+        label: "🔍 Suche",
         focus: true,
         data: buildSearchPromptContent(request),
       },
-      { type: "separator", label: "Showcase" },
       {
-        id: "docu-channels",
+        id: "channels",
         icon: "apps",
-        label: "Doku-Sender",
-        data: buildDocuChannelsContent(request),
+        label: "📺 Sender",
+        data: buildChannelsContent(request),
       },
-      ...PRESETS.map((preset) => ({
-        id: preset.id,
-        icon: preset.icon,
-        label: preset.label,
-        data: absoluteUrl(request, "/msx/search", { ...preset.params, size: DEFAULT_SEARCH_SIZE }),
-      })),
-      { type: "separator", label: "Service" },
       {
-        id: "health",
-        icon: "info",
-        label: "Worker Info",
-        data: buildInfoContent(request),
+        id: "topics",
+        icon: "science",
+        label: "🧪 Themen",
+        data: buildTopicsContent(request),
+      },
+      {
+        id: "latest",
+        icon: "star",
+        label: "⭐ Neu",
+        data: absoluteUrl(request, "/msx/search", {
+          q: withDurationSyntax("doku", 20),
+          fields: "topic,title,description",
+          sort: "timestamp",
+          order: "desc",
+          size: MAX_SEARCH_SIZE,
+        }),
+      },
+      {
+        id: "favorites",
+        icon: "favorite",
+        label: "❤️ Favoriten",
+        data: buildFavoritesContent(request),
       },
       {
         id: "settings",
         type: "settings",
         icon: "settings",
-        label: "MSX Einstellungen",
+        label: "⚙ Einstellungen",
       },
     ],
   };
@@ -525,7 +535,7 @@ function buildSearchPromptContent(request) {
   };
 }
 
-function buildDocuChannelsContent(request) {
+function buildChannelsContent(request) {
   return {
     name: APP_NAME,
     version: APP_VERSION,
@@ -559,6 +569,62 @@ function buildDocuChannelsContent(request) {
         })}`,
       };
     }),
+  };
+}
+
+function buildTopicsContent(request) {
+  return {
+    name: APP_NAME,
+    version: APP_VERSION,
+    flag: "mediathekviewweb-msx-topics",
+    cache: false,
+    restore: true,
+    type: "list",
+    headline: "Themen",
+    template: {
+      type: "separate",
+      layout: "0,0,6,2",
+      color: "msx-glass",
+      enumerate: false,
+    },
+    items: PRESETS.filter((preset) => preset.id !== "latest").map((preset) => ({
+      id: `topic-${preset.id}`,
+      icon: preset.icon,
+      title: preset.label,
+      titleHeader: "Schnellzugriff",
+      text: "Dokumentationen und Reportagen direkt zu diesem Thema anzeigen.",
+      action: `content:${absoluteUrl(request, "/msx/search", {
+        ...preset.params,
+        size: DEFAULT_SEARCH_SIZE,
+      })}`,
+    })),
+  };
+}
+
+function buildFavoritesContent(request) {
+  return {
+    name: APP_NAME,
+    version: APP_VERSION,
+    flag: "mediathekviewweb-msx-favorites",
+    cache: false,
+    restore: true,
+    type: "list",
+    headline: "Favoriten",
+    template: {
+      type: "separate",
+      layout: "0,0,12,2",
+      color: "msx-glass",
+    },
+    items: [
+      {
+        id: "favorites-placeholder",
+        icon: "favorite-border",
+        title: "Favoriten vorbereiten",
+        titleHeader: "Noch keine lokalen Favoriten",
+        text: "Hier ist Platz fuer ein MSX-Local-Storage- oder Optionen-Konzept, um Sendungen spaeter lokal zu merken.",
+        action: buildSearchInputAction(request),
+      },
+    ],
   };
 }
 
