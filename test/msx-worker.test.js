@@ -143,6 +143,15 @@ describe("MSX worker routes", () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
+    assert.equal(body.cache, true);
+    assert.equal(body.restore, true);
+    assert.equal(body.refocus, true);
+    assert.equal(body.style, "flat-separator");
+    assert.equal(body.logo, "https://worker.example/assets/logo.svg");
+    assert.equal(body.logoSize, "medium");
+    assert.equal(body.background, "https://worker.example/assets/background.svg");
+    assert.equal(body.transparent, true);
+    assert.equal(body.headline, "Mediathek Dokus");
     assert.ok(Array.isArray(body.menu));
     assert.equal(body.menu[0].id, "search");
     assert.match(body.menu[0].data.items[0].action, /^content:request:interaction:/);
