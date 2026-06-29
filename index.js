@@ -546,22 +546,27 @@ function buildSearchPromptContent(request) {
     type: "list",
     headline: "Doku Suche",
     template: {
-      type: "control",
-      layout: "0,0,12,1",
       color: "msx-glass",
+      enumerate: false,
     },
     items: [
       {
         id: "search-input",
+        type: "control",
+        layout: "0,0,12,1",
         icon: "search",
-        label: "Suchbegriff eingeben",
+        label: "Was möchtest du sehen?",
         action: buildSearchInputAction(request),
       },
       ...QUICK_FILTERS.map((filter) => ({
         id: `quick-${filter.id}`,
+        type: "separate",
+        layout: "0,0,4,2",
         icon: filter.icon,
-        label: filter.label,
-        color: filter.color,
+        badge: "Schnellfilter",
+        badgeColor: filter.color,
+        title: filter.label,
+        titleFooter: "Direkt zur Ergebnisliste",
         action: `content:${absoluteUrl(request, "/msx/search", {
           ...filter.params,
           size: filter.id === "latest" ? MAX_SEARCH_SIZE : DEFAULT_SEARCH_SIZE,
