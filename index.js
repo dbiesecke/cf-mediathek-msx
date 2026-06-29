@@ -220,14 +220,15 @@ const DOCU_CHANNELS = [
 ];
 
 const TOPIC_FILTERS = [
-  { id: "society", label: "Gesellschaft", icon: "groups", color: "msx-purple-soft", params: { q: withDurationSyntax("gesellschaft", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
-  { id: "history", label: "Geschichte", icon: "history-edu", color: "msx-yellow-soft", params: { q: withDurationSyntax("geschichte", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
-  { id: "science", label: "Wissenschaft", icon: "science", color: "msx-cyan-soft", params: { q: withDurationSyntax("wissenschaft", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
-  { id: "politics", label: "Politik", icon: "account-balance", color: "msx-blue-soft", params: { q: withDurationSyntax("politik", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
-  { id: "nature", label: "Natur", icon: "terrain", color: "msx-green-soft", params: { q: withDurationSyntax("natur", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
-  { id: "true-crime", label: "True Crime", icon: "local-police", color: "msx-red-soft", params: { q: withDurationSyntax("true crime", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
-  { id: "culture", label: "Kultur", icon: "theaters", color: "msx-red-soft", params: { q: withDurationSyntax("kultur", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
-  { id: "travel", label: "Reisen", icon: "explore", color: "msx-cyan-soft", params: { q: withDurationSyntax("reise", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "gesellschaft", icon: "groups", title: "Gesellschaft", query: "gesellschaft", badgeColor: "msx-purple-soft" },
+  { id: "geschichte", icon: "history-edu", title: "Geschichte", query: "geschichte", badgeColor: "msx-yellow-soft" },
+  { id: "wissenschaft", icon: "science", title: "Wissenschaft", query: "wissenschaft", badgeColor: "msx-cyan-soft" },
+  { id: "politik", icon: "account-balance", title: "Politik", query: "politik", badgeColor: "msx-blue-soft" },
+  { id: "natur", icon: "terrain", title: "Natur", query: "natur", badgeColor: "msx-green-soft" },
+  { id: "true-crime", icon: "local-police", title: "True Crime", query: "true crime", badgeColor: "msx-red-soft" },
+  { id: "kultur", icon: "theaters", title: "Kultur", query: "kultur", badgeColor: "msx-red-soft" },
+  { id: "reise", icon: "explore", title: "Reise", query: "reise", badgeColor: "msx-cyan-soft" },
+  { id: "technik", icon: "engineering", title: "Technik", query: "technik", badgeColor: "msx-yellow-soft" },
 ];
 
 const CHANNEL_METADATA = [
@@ -737,21 +738,19 @@ function buildTopicsContent(request) {
     restore: true,
     type: "list",
     headline: "Themen",
-    template: {
-      type: "separate",
-      layout: "0,0,6,2",
-      color: "msx-glass",
-      enumerate: false,
-    },
-    items: TOPIC_FILTERS.map((filter) => ({
-      id: `topic-${filter.id}`,
-      icon: filter.icon,
-      badgeColor: getBadgeColor(filter.id, filter.color),
-      title: filter.label,
-      titleHeader: "Schnellzugriff",
-      text: "Dokumentationen und Reportagen direkt zu diesem Thema anzeigen.",
+    template: TEMPLATES.quickTile,
+    items: TOPIC_FILTERS.map((topic) => ({
+      ...TEMPLATES.quickTile,
+      id: `topic-${topic.id}`,
+      icon: topic.icon,
+      title: topic.title,
+      badge: "Thema",
+      badgeColor: topic.badgeColor,
       action: `content:${absoluteUrl(request, "/msx/search", {
-        ...filter.params,
+        q: withDurationSyntax(topic.query, 20),
+        fields: "topic,title,description",
+        sort: "timestamp",
+        order: "desc",
         size: DEFAULT_SEARCH_SIZE,
       })}`,
     })),
