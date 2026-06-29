@@ -200,7 +200,8 @@ describe("MSX worker routes", () => {
     assert.equal(body.items[0].data.url, "https://example.com/video-hd.mp4");
     assert.equal(body.items[0].titleHeader, "tagesschau");
     assert.equal(body.items[0].titleFooter, "ARD • 15 Min • 05.06.2026");
-    assert.equal(body.items[0].badge, "tagesschau");
+    assert.equal(body.items[0].badge, "ARD");
+    assert.equal(body.items[0].text, "Nachrichten des Tages");
     assert.equal(body.items[0].image, "https://images.example.com/tagesschau.jpg");
     assert.equal(body.items[0].imageFiller, "cover");
     assert.deepEqual(
@@ -242,7 +243,8 @@ describe("MSX worker routes", () => {
     assert.equal(body.items[0].layout, "0,0,4,2");
     assert.equal(body.items[0].titleHeader, "tagesschau");
     assert.equal(body.items[0].titleFooter, "ARD • 15 Min • 05.06.2026");
-    assert.equal(body.items[0].badge, "tagesschau");
+    assert.equal(body.items[0].badge, "ARD");
+    assert.equal(body.items[0].text, "Nachrichten des Tages");
     assert.equal(body.items[0].image, "https://images.example.com/tagesschau.jpg");
     assert.equal(body.items[0].imageFiller, "cover");
   });

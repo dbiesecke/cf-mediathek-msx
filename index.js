@@ -39,6 +39,7 @@ const MEDIATHEK_QUERY_URL = "https://mediathekviewweb.de/api/query";
 
 const DEFAULT_SEARCH_SIZE = 18;
 const MAX_SEARCH_SIZE = 36;
+const RESULT_DESCRIPTION_MAX_LENGTH = 180;
 const DEFAULT_DURATION_MIN = 15;
 const SEARCH_CACHE_SECONDS = 300;
 const STATIC_CACHE_SECONDS = 3600;
@@ -1192,12 +1193,13 @@ function buildMediathekItem(request, item, index, quality) {
   const description = cleanString(item.description);
   const duration = formatDuration(item.duration);
   const date = formatDate(item.timestamp);
-  const titleHeader = topic || channel;
+  const titleHeader = topic;
   const channelMeta = getChannelMeta(channel);
   const previewImage = selectMediathekImage(item);
   const image = previewImage || channelMeta.logoUrl;
   const hasPreviewImage = Boolean(previewImage);
-  const titleFooter = [channel, duration, date].filter(Boolean).join(" • ");
+  const titleFooter = formatResultFooter({ channel, duration, date });
+  const text = truncateText(description, RESULT_DESCRIPTION_MAX_LENGTH);
   const docuIcon = selectDocumentaryIcon(`${topic} ${title} ${description}`) || channelMeta.icon;
 
   return {
@@ -1210,11 +1212,12 @@ function buildMediathekItem(request, item, index, quality) {
     imageWidth: hasPreviewImage ? undefined : channelMeta.logoUrl ? 0.95 : -1,
     imageOverlay: hasPreviewImage ? 0.35 : 0,
     imageColor: "msx-black",
-    badge: topic || channel,
+    badge: channel,
     badgeColor: getMediathekBadgeColor({ topic, channel, title, description }, channelMeta.color || channelColor(channel)),
     title,
     titleHeader,
     titleFooter,
+    text,
     alignment: "title-left",
     truncation: "title|titleFooter",
     action: `execute:${absoluteUrl(request, "/msx/play")}`,
@@ -1882,6 +1885,18 @@ function channelColor(channel) {
   let hash = 0;
   for (const char of channel) hash = (hash + char.charCodeAt(0)) % CHANNEL_COLORS.length;
   return CHANNEL_COLORS[hash];
+}
+
+function formatResultFooter({ channel, duration, date }) {
+  return [channel, duration, date].filter(Boolean).join(" • ");
+}
+
+function truncateText(value, maxLength) {
+  const text = cleanString(value).replace(/\s+/g, " ");
+  if (!text || text.length <= maxLength) return text;
+
+  const truncated = text.slice(0, maxLength - 1).trimEnd();
+  return `${truncated}…`;
 }
 
 function formatDuration(value) {
