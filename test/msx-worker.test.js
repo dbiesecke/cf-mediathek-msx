@@ -158,7 +158,7 @@ describe("MSX worker routes", () => {
     assert.match(body.menu[0].data.items[0].action, /topic(%2C|,)title(%2C|,)description/);
     assert.match(body.menu[0].data.items[0].action, /q=\{INPUT\}\+%3E15/);
     assert.doesNotMatch(body.menu[0].data.items[0].action, /duration_min=15/);
-    assert.equal(body.menu.map((item) => item.id).join(","), "search,channels,topics,latest,favorites,settings");
+    assert.equal(body.menu.map((item) => item.id).join(","), "search,channels,topics,latest,favorites,history,continue-watching,settings");
     assert.match(body.menu.find((item) => item.id === "latest").data, /sort=timestamp/);
     assert.match(body.menu.find((item) => item.id === "latest").data, /order=desc/);
     assert.match(body.menu.find((item) => item.id === "latest").data, /size=36/);
@@ -167,6 +167,8 @@ describe("MSX worker routes", () => {
     assert.doesNotMatch(body.menu.find((item) => item.id === "latest").data, /duration_min=20/);
     assert.ok(body.menu.find((item) => item.id === "topics").data.items.length > 0);
     assert.ok(body.menu.find((item) => item.id === "favorites").data.items[0].id === "favorites-placeholder");
+    assert.ok(body.menu.find((item) => item.id === "history").data.items[0].id === "history-placeholder");
+    assert.ok(body.menu.find((item) => item.id === "continue-watching").data.items[0].id === "continue-watching-placeholder");
   });
 
   it("queries MediathekViewWeb and maps results to MSX content", async () => {
@@ -196,6 +198,28 @@ describe("MSX worker routes", () => {
     assert.equal(body.items[0].badge, "tagesschau");
     assert.equal(body.items[0].image, "https://images.example.com/tagesschau.jpg");
     assert.equal(body.items[0].imageFiller, "cover");
+    assert.deepEqual(
+      body.items[0].options.items.map((item) => item.id),
+      [
+        "play-default",
+        "play-sd",
+        "play-low",
+        "add-favorite",
+        "search-similar",
+        "more-from-channel",
+        "more-about-topic",
+        "open-website",
+        "resolve-test",
+      ],
+    );
+    assert.match(
+      body.items[0].options.items.find((item) => item.id === "more-from-channel").action,
+      /^content:https:\/\/worker\.example\/msx\/search\?channel=ARD/,
+    );
+    assert.match(
+      body.items[0].options.items.find((item) => item.id === "more-about-topic").action,
+      /^content:https:\/\/worker\.example\/msx\/search\?topic=tagesschau/,
+    );
     assert.equal(body.items.at(-1).id, "new-search");
     assert.match(body.items.at(-1).action, /^content:request:interaction:/);
   });
