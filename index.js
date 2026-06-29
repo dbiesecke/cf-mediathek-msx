@@ -515,6 +515,18 @@ export async function handleRequest(request, env = {}, ctx = {}) {
       return cacheable(request, ctx, SEARCH_CACHE_SECONDS, () => handleSearch(request));
     }
 
+    if (pathname === "/msx/favorites") {
+      return jsonResponse(buildFavoritesContent(request), { cacheSeconds: 0 });
+    }
+
+    if (pathname === "/msx/history") {
+      return jsonResponse(buildHistoryContent(request), { cacheSeconds: 0 });
+    }
+
+    if (pathname === "/msx/continue-watching") {
+      return jsonResponse(buildHistoryContent(request, { continueOnly: true }), { cacheSeconds: 0 });
+    }
+
     if (pathname === "/msx/search-action") {
       return handleSearchAction(request);
     }
@@ -620,8 +632,20 @@ export function buildMenu(request) {
       {
         id: "favorites",
         icon: "favorite",
-        label: "❤️ Favoriten",
+        label: "❤️ Merkliste",
         data: buildFavoritesContent(request),
+      },
+      {
+        id: "history",
+        icon: "history",
+        label: "🕘 Verlauf",
+        data: buildHistoryContent(request),
+      },
+      {
+        id: "continue-watching",
+        icon: "play-circle-outline",
+        label: "▶ Weiterschauen",
+        data: buildHistoryContent(request, { continueOnly: true }),
       },
       {
         id: "settings",
@@ -735,14 +759,43 @@ function buildTopicsContent(request) {
 }
 
 function buildFavoritesContent(request) {
+  return buildPlaceholderContent(request, {
+    flag: "mediathekviewweb-msx-favorites",
+    headline: "Merkliste",
+    placeholderId: "favorites-placeholder",
+    icon: "favorite-border",
+    title: "Merkliste vorbereiten",
+    titleHeader: "Noch keine gespeicherten Sendungen",
+    text: "Persistente Favoriten sind noch nicht aktiviert. Nutze vorerst die Suche oder die neuen Kontextoptionen, um aehnliche Dokus, Sender und Themen schnell wiederzufinden.",
+    searchLabel: "Doku suchen",
+  });
+}
+
+function buildHistoryContent(request, options = {}) {
+  const continueOnly = Boolean(options.continueOnly);
+  return buildPlaceholderContent(request, {
+    flag: continueOnly ? "mediathekviewweb-msx-continue-watching" : "mediathekviewweb-msx-history",
+    headline: continueOnly ? "Weiterschauen" : "Verlauf",
+    placeholderId: continueOnly ? "continue-watching-placeholder" : "history-placeholder",
+    icon: continueOnly ? "play-circle-outline" : "history",
+    title: continueOnly ? "Weiterschauen vorbereiten" : "Verlauf vorbereiten",
+    titleHeader: continueOnly ? "Noch keine angefangenen Sendungen" : "Noch kein Wiedergabeverlauf",
+    text: continueOnly
+      ? "Eine Weiterschauen-Liste benoetigt lokale Persistenz fuer Wiedergabepositionen. Bis dahin kannst du ueber die Suche direkt zur naechsten Doku springen."
+      : "Ein Verlauf benoetigt lokale Persistenz in MSX oder einen spaeteren Speicher-Endpunkt. Bis dahin fuehrt dich diese Ansicht zur Suche zurueck.",
+    searchLabel: continueOnly ? "Sendung suchen" : "Zur Suche",
+  });
+}
+
+function buildPlaceholderContent(request, { flag, headline, placeholderId, icon, title, titleHeader, text, searchLabel }) {
   return {
     name: APP_NAME,
     version: APP_VERSION,
-    flag: "mediathekviewweb-msx-favorites",
+    flag,
     cache: false,
     restore: true,
     type: "list",
-    headline: "Favoriten",
+    headline,
     template: {
       type: "separate",
       layout: "0,0,12,2",
@@ -750,11 +803,18 @@ function buildFavoritesContent(request) {
     },
     items: [
       {
-        id: "favorites-placeholder",
-        icon: "favorite-border",
-        title: "Favoriten vorbereiten",
-        titleHeader: "Noch keine lokalen Favoriten",
-        text: "Hier ist Platz fuer ein MSX-Local-Storage- oder Optionen-Konzept, um Sendungen spaeter lokal zu merken.",
+        id: placeholderId,
+        icon,
+        title,
+        titleHeader,
+        text,
+        action: buildSearchInputAction(request),
+      },
+      {
+        ...TEMPLATES.actionControl,
+        id: `${placeholderId}-search`,
+        icon: "search",
+        label: searchLabel,
         action: buildSearchInputAction(request),
       },
     ],
@@ -1172,6 +1232,8 @@ function buildMediathekItem(request, item, index, quality) {
     },
     options: buildItemOptions(request, {
       title,
+      channel,
+      topic,
       website,
       urls,
       selectedUrl,
@@ -1225,6 +1287,50 @@ function buildItemOptions(request, item) {
       label: "Niedrig",
       action: `video:${item.urls.low}`,
       playerLabel: `${item.title} (Low)`,
+    });
+  }
+
+  items.push({
+    id: "add-favorite",
+    icon: "favorite-border",
+    label: "Zur Merkliste",
+    action: `content:${absoluteUrl(request, "/msx/favorites")}`,
+  });
+
+  if (item.title) {
+    items.push({
+      id: "search-similar",
+      icon: "search",
+      label: "Ähnliche suchen",
+      action: `content:${absoluteUrl(request, "/msx/search", {
+        q: withDurationSyntax(item.title, DEFAULT_DURATION_MIN),
+        fields: DOCU_SEARCH_FIELDS,
+        size: DEFAULT_SEARCH_SIZE,
+      })}`,
+    });
+  }
+
+  if (item.channel) {
+    items.push({
+      id: "more-from-channel",
+      icon: "apps",
+      label: "Mehr von diesem Sender",
+      action: `content:${absoluteUrl(request, "/msx/search", {
+        channel: item.channel,
+        size: DEFAULT_SEARCH_SIZE,
+      })}`,
+    });
+  }
+
+  if (item.topic) {
+    items.push({
+      id: "more-about-topic",
+      icon: "science",
+      label: "Mehr zu diesem Thema",
+      action: `content:${absoluteUrl(request, "/msx/search", {
+        topic: item.topic,
+        size: DEFAULT_SEARCH_SIZE,
+      })}`,
     });
   }
 
