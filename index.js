@@ -825,7 +825,8 @@ function buildSearchInputAction(request, initInput = "") {
   const serviceUrl = absoluteUrl(request, "/msx/search", {
     q: withDurationSyntax("{INPUT}", DEFAULT_DURATION_MIN),
     fields: "topic,title,description",
-    group: "channel",
+    sort: "timestamp",
+    order: "desc",
     size: DEFAULT_SEARCH_SIZE,
   }).replace("%7BINPUT%7D", "{INPUT}");
 
@@ -835,8 +836,8 @@ function buildSearchInputAction(request, initInput = "") {
     "Doku Suche",
     "",
     "",
-    "Suchbegriff, Sender oder Thema eingeben",
-    "Natur, Geschichte, ARTE, ZDFinfo",
+    "Suchbegriff, Sender, Thema oder Laufzeit wie >15 eingeben",
+    "Natur >15, Geschichte, ARTE, ZDFinfo",
     String(MAX_SEARCH_SIZE),
     initInput,
   ].join("|");

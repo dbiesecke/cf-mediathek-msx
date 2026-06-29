@@ -157,6 +157,11 @@ describe("MSX worker routes", () => {
     assert.match(body.menu[0].data.items[0].action, /^content:request:interaction:/);
     assert.match(body.menu[0].data.items[0].action, /topic(%2C|,)title(%2C|,)description/);
     assert.match(body.menu[0].data.items[0].action, /q=\{INPUT\}\+%3E15/);
+    assert.match(body.menu[0].data.items[0].action, /sort=timestamp/);
+    assert.match(body.menu[0].data.items[0].action, /order=desc/);
+    assert.match(body.menu[0].data.items[0].action, /size=18/);
+    assert.match(body.menu[0].data.items[0].action, /Laufzeit wie >15/);
+    assert.doesNotMatch(body.menu[0].data.items[0].action, /group=channel/);
     assert.doesNotMatch(body.menu[0].data.items[0].action, /duration_min=15/);
     assert.equal(body.menu.map((item) => item.id).join(","), "search,channels,topics,latest,favorites,history,continue-watching,settings");
     assert.match(body.menu.find((item) => item.id === "latest").data, /sort=timestamp/);
