@@ -155,15 +155,15 @@ describe("MSX worker routes", () => {
     assert.ok(Array.isArray(body.menu));
     assert.equal(body.menu[0].id, "search");
     assert.match(body.menu[0].data.items[0].action, /^content:request:interaction:/);
-    assert.match(body.menu[0].data.items[0].action, /topic(%2C|,)title(%2C|,)description/);
+    assert.match(body.menu[0].data.items[0].action, /channel(%2C|,)topic(%2C|,)title(%2C|,)description/);
     assert.match(body.menu[0].data.items[0].action, /q=\{INPUT\}\+%3E15/);
     assert.match(body.menu[0].data.items[0].action, /sort=timestamp/);
     assert.match(body.menu[0].data.items[0].action, /order=desc/);
-    assert.match(body.menu[0].data.items[0].action, /size=18/);
+    assert.match(body.menu[0].data.items[0].action, /size=30/);
     assert.match(body.menu[0].data.items[0].action, /Laufzeit wie >15/);
     assert.doesNotMatch(body.menu[0].data.items[0].action, /group=channel/);
     assert.doesNotMatch(body.menu[0].data.items[0].action, /duration_min=15/);
-    assert.equal(body.menu.map((item) => item.id).join(","), "search,channels,topics,latest,favorites,history,continue-watching,settings");
+    assert.equal(body.menu.map((item) => item.id).join(","), "search,channels,topics,latest,favorites,settings");
     assert.match(body.menu.find((item) => item.id === "latest").data, /sort=timestamp/);
     assert.match(body.menu.find((item) => item.id === "latest").data, /order=desc/);
     assert.match(body.menu.find((item) => item.id === "latest").data, /size=36/);
@@ -172,8 +172,7 @@ describe("MSX worker routes", () => {
     assert.doesNotMatch(body.menu.find((item) => item.id === "latest").data, /duration_min=20/);
     assert.ok(body.menu.find((item) => item.id === "topics").data.items.length > 0);
     assert.ok(body.menu.find((item) => item.id === "favorites").data.items[0].id === "favorites-placeholder");
-    assert.ok(body.menu.find((item) => item.id === "history").data.items[0].id === "history-placeholder");
-    assert.ok(body.menu.find((item) => item.id === "continue-watching").data.items[0].id === "continue-watching-placeholder");
+    assert.ok(body.menu.find((item) => item.id === "favorites").data.items.some((entry) => entry.id === "history-open"));
   });
 
   it("queries MediathekViewWeb and maps results to MSX content", async () => {
@@ -199,7 +198,7 @@ describe("MSX worker routes", () => {
     assert.equal(body.items[0].action, "execute:https://worker.example/msx/play");
     assert.equal(body.items[0].data.url, "https://example.com/video-hd.mp4");
     assert.equal(body.items[0].titleHeader, "tagesschau");
-    assert.equal(body.items[0].titleFooter, "ARD • 15 Min • 05.06.2026");
+    assert.equal(body.items[0].titleFooter, "ARD • 15 Min • Vor 24 Tagen");
     assert.equal(body.items[0].badge, "ARD");
     assert.equal(body.items[0].text, "Nachrichten des Tages");
     assert.equal(body.items[0].image, "https://images.example.com/tagesschau.jpg");
@@ -208,9 +207,14 @@ describe("MSX worker routes", () => {
       body.items[0].options.items.map((item) => item.id),
       [
         "play-default",
+        "test-stream",
+        "copy-link",
+        "choose-quality",
         "play-sd",
         "play-low",
         "add-favorite",
+        "remove-favorite",
+        "watch-later",
         "search-similar",
         "more-from-channel",
         "more-about-topic",
@@ -242,7 +246,7 @@ describe("MSX worker routes", () => {
     assert.equal(body.items[0].title, "tagesschau 20:00 Uhr");
     assert.equal(body.items[0].layout, "0,0,4,2");
     assert.equal(body.items[0].titleHeader, "tagesschau");
-    assert.equal(body.items[0].titleFooter, "ARD • 15 Min • 05.06.2026");
+    assert.equal(body.items[0].titleFooter, "ARD • 15 Min • Vor 24 Tagen");
     assert.equal(body.items[0].badge, "ARD");
     assert.equal(body.items[0].text, "Nachrichten des Tages");
     assert.equal(body.items[0].image, "https://images.example.com/tagesschau.jpg");

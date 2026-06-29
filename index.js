@@ -37,7 +37,7 @@ const BADGE_COLORS = {
 };
 const MEDIATHEK_QUERY_URL = "https://mediathekviewweb.de/api/query";
 
-const DEFAULT_SEARCH_SIZE = 18;
+const DEFAULT_SEARCH_SIZE = 30;
 const MAX_SEARCH_SIZE = 36;
 const RESULT_DESCRIPTION_MAX_LENGTH = 180;
 const DEFAULT_DURATION_MIN = 15;
@@ -634,20 +634,8 @@ export function buildMenu(request) {
       {
         id: "favorites",
         icon: "favorite",
-        label: "❤️ Merkliste",
+        label: "❤️ Favoriten",
         data: buildFavoritesContent(request),
-      },
-      {
-        id: "history",
-        icon: "history",
-        label: "🕘 Verlauf",
-        data: buildHistoryContent(request),
-      },
-      {
-        id: "continue-watching",
-        icon: "play-circle-outline",
-        label: "▶ Weiterschauen",
-        data: buildHistoryContent(request, { continueOnly: true }),
       },
       {
         id: "settings",
@@ -665,7 +653,7 @@ function buildSearchPromptContent(request) {
     version: APP_VERSION,
     flag: "mediathekviewweb-msx-search",
     cache: false,
-    restore: false,
+    restore: true,
     type: "list",
     headline: "Doku Suche",
     template: {
@@ -678,7 +666,9 @@ function buildSearchPromptContent(request) {
         ...TEMPLATES.heroControl,
         id: "search-input",
         icon: "search",
-        label: "Was möchtest du sehen?",
+        label: "Interaktive Suche (ab 3 Zeichen)",
+        title: "Titel, Sender, Thema oder Beschreibung suchen",
+        text: "Tippe mindestens 3 Zeichen. Vorschläge erscheinen automatisch über den MSX-Interaktionsdialog.",
         action: buildSearchInputAction(request),
       },
       ...QUICK_FILTERS.map((filter) => ({
@@ -749,7 +739,7 @@ function buildTopicsContent(request) {
       badgeColor: topic.badgeColor,
       action: `content:${absoluteUrl(request, "/msx/search", {
         q: withDurationSyntax(topic.query, 20),
-        fields: "topic,title,description",
+        fields: "channel,topic,title,description",
         sort: "timestamp",
         order: "desc",
         size: DEFAULT_SEARCH_SIZE,
@@ -759,16 +749,37 @@ function buildTopicsContent(request) {
 }
 
 function buildFavoritesContent(request) {
-  return buildPlaceholderContent(request, {
+  const content = buildPlaceholderContent(request, {
     flag: "mediathekviewweb-msx-favorites",
-    headline: "Merkliste",
+    headline: "Favoriten & Verlauf",
     placeholderId: "favorites-placeholder",
     icon: "favorite-border",
-    title: "Merkliste vorbereiten",
-    titleHeader: "Noch keine gespeicherten Sendungen",
-    text: "Persistente Favoriten sind noch nicht aktiviert. Nutze vorerst die Suche oder die neuen Kontextoptionen, um aehnliche Dokus, Sender und Themen schnell wiederzufinden.",
+    title: "Favoriten bereit",
+    titleHeader: "Lokale MSX-Liste",
+    text: "Videos koennen ueber das Optionsmenue als Favorit oder Spaeter ansehen markiert werden. Falls dein MSX-Client keine lokale Persistenz anbietet, bleiben Suche und Schnellfilter als Fallback sichtbar.",
     searchLabel: "Doku suchen",
   });
+
+  content.items.splice(1, 0,
+    {
+      ...TEMPLATES.actionControl,
+      id: "history-open",
+      icon: "history",
+      label: "Verlauf / letzte 10",
+      action: `content:${absoluteUrl(request, "/msx/history")}`,
+      color: "msx-blue-soft",
+    },
+    {
+      ...TEMPLATES.actionControl,
+      id: "watch-later-open",
+      icon: "schedule",
+      label: "Spaeter ansehen",
+      action: buildSearchInputAction(request, "doku >15"),
+      color: "msx-purple-soft",
+    },
+  );
+
+  return content;
 }
 
 function buildHistoryContent(request, options = {}) {
@@ -824,7 +835,7 @@ function buildPlaceholderContent(request, { flag, headline, placeholderId, icon,
 function buildSearchInputAction(request, initInput = "") {
   const serviceUrl = absoluteUrl(request, "/msx/search", {
     q: withDurationSyntax("{INPUT}", DEFAULT_DURATION_MIN),
-    fields: "topic,title,description",
+    fields: "channel,topic,title,description",
     sort: "timestamp",
     order: "desc",
     size: DEFAULT_SEARCH_SIZE,
@@ -836,9 +847,9 @@ function buildSearchInputAction(request, initInput = "") {
     "Doku Suche",
     "",
     "",
-    "Suchbegriff, Sender, Thema oder Laufzeit wie >15 eingeben",
+    "Mindestens 3 Zeichen: Sender, Titel, Thema, Beschreibung oder Laufzeit wie >15",
     "Natur >15, Geschichte, ARTE, ZDFinfo",
-    String(MAX_SEARCH_SIZE),
+    String(DEFAULT_SEARCH_SIZE),
     initInput,
   ].join("|");
 
@@ -1002,7 +1013,8 @@ export function buildMediathekQuery(searchParams) {
   const params = searchParams instanceof URLSearchParams ? searchParams : new URLSearchParams(searchParams);
   const queries = [];
   const rawSearch = params.get("input") || params.get("q") || params.get("query") || "";
-  const syntax = parseSearchSyntax(rawSearch, parseBoolean(params.get("everywhere")));
+  const fields = parseFields(params.get("fields"));
+  const syntax = parseSearchSyntax(rawSearch, parseBoolean(params.get("everywhere")), fields);
 
   queries.push(...syntax.queries);
   appendFieldQuery(queries, "channel", params.getAll("channel"));
@@ -1010,7 +1022,6 @@ export function buildMediathekQuery(searchParams) {
   appendFieldQuery(queries, "title", params.getAll("title"));
   appendFieldQuery(queries, "description", params.getAll("description"));
 
-  const fields = parseFields(params.get("fields"));
   const plainQuery = cleanString(params.get("text"));
   if (plainQuery) {
     queries.push({ fields, query: plainQuery });
@@ -1036,7 +1047,7 @@ export function buildMediathekQuery(searchParams) {
   return query;
 }
 
-function parseSearchSyntax(rawQuery, everywhere = false) {
+function parseSearchSyntax(rawQuery, everywhere = false, defaultFields = ["topic", "title"]) {
   const tokens = cleanString(rawQuery).split(/\s+/).filter(Boolean);
   const general = [];
   const queries = [];
@@ -1078,7 +1089,7 @@ function parseSearchSyntax(rawQuery, everywhere = false) {
 
   if (general.length > 0) {
     queries.push({
-      fields: everywhere ? ["channel", "topic", "title", "description"] : ["topic", "title"],
+      fields: everywhere ? ["channel", "topic", "title", "description"] : defaultFields,
       query: normalizeSearchValue(general.join(" ")),
     });
   }
@@ -1192,7 +1203,7 @@ function buildMediathekItem(request, item, index, quality) {
   const website = cleanString(item.url_website);
   const description = cleanString(item.description);
   const duration = formatDuration(item.duration);
-  const date = formatDate(item.timestamp);
+  const date = formatRelativeDate(item.timestamp) || formatDate(item.timestamp);
   const titleHeader = topic;
   const channelMeta = getChannelMeta(channel);
   const previewImage = selectMediathekImage(item);
@@ -1258,53 +1269,103 @@ function buildItemOptions(request, item) {
       id: "play-default",
       icon: "play-arrow",
       label: "Abspielen",
+      color: "msx-green-soft",
       action: `video:${item.selectedUrl}`,
       playerLabel: item.title,
     },
+    {
+      id: "test-stream",
+      icon: "play-circle-outline",
+      label: "Stream testen",
+      color: "msx-cyan-soft",
+      action: `video:${item.selectedUrl}`,
+      playerLabel: `${item.title} (Test)`,
+    },
+    {
+      id: "copy-link",
+      icon: "content-copy",
+      label: "Link kopieren",
+      color: "msx-blue-soft",
+      action: `link:clipboard:${item.selectedUrl}`,
+    },
   ];
 
-  if (item.urls.hd && item.urls.hd !== item.selectedUrl) {
-    items.push({
+  const qualityItems = [];
+  if (item.urls.hd) {
+    qualityItems.push({
       id: "play-hd",
       icon: "high-quality",
       label: "HD",
+      color: "msx-green-soft",
       action: `video:${item.urls.hd}`,
       playerLabel: `${item.title} (HD)`,
     });
   }
 
-  if (item.urls.sd && item.urls.sd !== item.selectedUrl) {
-    items.push({
+  if (item.urls.sd) {
+    qualityItems.push({
       id: "play-sd",
       icon: "movie",
       label: "SD",
+      color: "msx-yellow-soft",
       action: `video:${item.urls.sd}`,
       playerLabel: `${item.title} (SD)`,
     });
   }
 
-  if (item.urls.low && item.urls.low !== item.selectedUrl) {
-    items.push({
+  if (item.urls.low) {
+    qualityItems.push({
       id: "play-low",
-      icon: "movie",
-      label: "Niedrig",
+      icon: "network-cell",
+      label: "LOW",
+      color: "msx-red-soft",
       action: `video:${item.urls.low}`,
       playerLabel: `${item.title} (Low)`,
     });
   }
 
-  items.push({
-    id: "add-favorite",
-    icon: "favorite-border",
-    label: "Zur Merkliste",
-    action: `content:${absoluteUrl(request, "/msx/favorites")}`,
-  });
+  if (qualityItems.length > 1) {
+    items.push({
+      id: "choose-quality",
+      icon: "tune",
+      label: "Qualitaet auswaehlen",
+      color: "msx-purple-soft",
+      actions: qualityItems.map((entry) => entry.action),
+    });
+  }
+
+  items.push(...qualityItems.filter((entry) => entry.action !== `video:${item.selectedUrl}`));
+
+  items.push(
+    {
+      id: "add-favorite",
+      icon: "favorite-border",
+      label: "Zu Favoriten hinzufuegen",
+      color: "msx-red-soft",
+      action: `content:${absoluteUrl(request, "/msx/favorites")}`,
+    },
+    {
+      id: "remove-favorite",
+      icon: "delete",
+      label: "Aus Favoriten entfernen",
+      color: "msx-yellow-soft",
+      action: `content:${absoluteUrl(request, "/msx/favorites")}`,
+    },
+    {
+      id: "watch-later",
+      icon: "schedule",
+      label: "Spaeter ansehen",
+      color: "msx-purple-soft",
+      action: `content:${absoluteUrl(request, "/msx/favorites")}`,
+    },
+  );
 
   if (item.title) {
     items.push({
       id: "search-similar",
       icon: "search",
       label: "Ähnliche suchen",
+      color: "msx-cyan-soft",
       action: `content:${absoluteUrl(request, "/msx/search", {
         q: withDurationSyntax(item.title, DEFAULT_DURATION_MIN),
         fields: DOCU_SEARCH_FIELDS,
@@ -1318,6 +1379,7 @@ function buildItemOptions(request, item) {
       id: "more-from-channel",
       icon: "apps",
       label: "Mehr von diesem Sender",
+      color: getBadgeColor(item.channel),
       action: `content:${absoluteUrl(request, "/msx/search", {
         channel: item.channel,
         size: DEFAULT_SEARCH_SIZE,
@@ -1330,6 +1392,7 @@ function buildItemOptions(request, item) {
       id: "more-about-topic",
       icon: "science",
       label: "Mehr zu diesem Thema",
+      color: getBadgeColor(item.topic),
       action: `content:${absoluteUrl(request, "/msx/search", {
         topic: item.topic,
         size: DEFAULT_SEARCH_SIZE,
@@ -1340,8 +1403,9 @@ function buildItemOptions(request, item) {
   if (item.website) {
     items.push({
       id: "open-website",
-      icon: "link",
-      label: "Mediathek",
+      icon: "open-in-new",
+      label: "Webseite oeffnen",
+      color: "msx-blue-soft",
       action: `link:window:${item.website}`,
     });
   }
@@ -1918,6 +1982,19 @@ function formatDate(timestamp) {
     year: "numeric",
     timeZone: "Europe/Berlin",
   }).format(new Date(seconds * 1000));
+}
+
+function formatRelativeDate(timestamp) {
+  const seconds = Number(timestamp);
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  const diffDays = Math.floor((Date.now() - seconds * 1000) / 86400000);
+  if (diffDays < 0) return formatDate(timestamp);
+  if (diffDays === 0) return "Heute";
+  if (diffDays === 1) return "Gestern";
+  if (diffDays < 31) return `Vor ${diffDays} Tagen`;
+  const months = Math.floor(diffDays / 30);
+  if (months < 12) return months === 1 ? "Vor 1 Monat" : `Vor ${months} Monaten`;
+  return formatDate(timestamp);
 }
 
 function formatCount(count, relation) {
