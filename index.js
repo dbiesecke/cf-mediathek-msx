@@ -991,7 +991,7 @@ function buildSearchContent(request, mediathekQuery, result) {
     items.push({
       id: "more-results",
       type: "control",
-      layout: "0,0,6,1",
+      layout: "0,0,4,2",
       color: "msx-glass",
       icon: "plus",
       label: `Mehr laden (${offset + size}/${formatCount(total, queryInfo.totalRelation)})`,
@@ -1002,7 +1002,7 @@ function buildSearchContent(request, mediathekQuery, result) {
   items.push({
     id: "new-search",
     type: "control",
-    layout: "0,0,6,1",
+    layout: "0,0,4,2",
     color: "msx-glass",
     icon: "search",
     label: "Neue Suche",
@@ -1021,7 +1021,7 @@ function buildSearchContent(request, mediathekQuery, result) {
     extension: buildExtension(queryInfo),
     template: {
       type: "separate",
-      layout: "0,0,6,1",
+      layout: "0,0,4,2",
       color: "msx-black-soft",
       round: false,
       compress: true,
@@ -1048,27 +1048,32 @@ function buildMediathekItem(request, item, index, quality) {
   const description = cleanString(item.description);
   const duration = formatDuration(item.duration);
   const date = formatDate(item.timestamp);
-  const titleFooter = [channel, date, duration].filter(Boolean).join(" | ");
+  const titleHeader = topic || channel;
   const channelMeta = getChannelMeta(channel);
+  const previewImage = selectMediathekImage(item);
+  const image = previewImage || channelMeta.logoUrl;
+  const hasPreviewImage = Boolean(previewImage);
+  const titleFooter = [channel, duration, date].filter(Boolean).join(" • ");
   const docuIcon = selectDocumentaryIcon(`${topic} ${title} ${description}`) || channelMeta.icon;
 
   return {
     id: createItemId(item, index),
     type: "separate",
-    layout: "0,0,6,1",
+    layout: "0,0,4,2",
     color: "msx-black-soft",
     round: false,
     compress: true,
-    icon: docuIcon,
-    iconSize: "small",
-    image: channelMeta.logoUrl,
-    imageFiller: "fit",
-    imageWidth: channelMeta.logoUrl ? 0.95 : -1,
-    imageOverlay: 0,
+    icon: image ? undefined : docuIcon,
+    iconSize: image ? undefined : "small",
+    image,
+    imageFiller: hasPreviewImage ? "cover" : "fit",
+    imageWidth: hasPreviewImage ? undefined : channelMeta.logoUrl ? 0.95 : -1,
+    imageOverlay: hasPreviewImage ? 0.35 : 0,
     imageColor: "msx-black",
-    badge: channel,
+    badge: topic || channel,
     badgeColor: channelMeta.color || channelColor(channel),
     title,
+    titleHeader,
     titleFooter,
     alignment: "title-left",
     truncation: "title|titleFooter",
@@ -1608,6 +1613,52 @@ function selectUrlFromPayload(data, quality) {
   return cleanString(data.url);
 }
 
+function selectMediathekImage(item) {
+  return [
+    item?.image,
+    item?.thumbnail,
+    item?.thumbnailUrl,
+    item?.thumbnail_url,
+    item?.url_thumbnail,
+    item?.url_image,
+    item?.url_image_web,
+    item?.urlImage,
+    item?.urlImageWeb,
+    item?.images,
+    item?.thumbnails,
+  ]
+    .map(extractImageUrl)
+    .find(Boolean) || "";
+}
+
+function extractImageUrl(value) {
+  if (typeof value === "string") return isHttpUrl(value) ? value.trim() : "";
+
+  if (Array.isArray(value)) {
+    return value.map(extractImageUrl).find(Boolean) || "";
+  }
+
+  if (value && typeof value === "object") {
+    return [
+      value.url,
+      value.src,
+      value.href,
+      value.large,
+      value.medium,
+      value.small,
+      value.default,
+    ]
+      .map(extractImageUrl)
+      .find(Boolean) || "";
+  }
+
+  return "";
+}
+
+function isHttpUrl(value) {
+  return /^https?:\/\//i.test(cleanString(value));
+}
+
 function createItemId(item, index) {
   const raw = cleanString(item.id) || `${item.channel}-${item.topic}-${item.title}-${item.timestamp}-${index}`;
   return `mv-${raw.replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 64) || index}`;
@@ -1626,18 +1677,22 @@ function channelColor(channel) {
 function formatDuration(value) {
   const seconds = Number(value);
   if (!Number.isFinite(seconds) || seconds <= 0) return "";
-  const minutes = Math.floor(seconds / 60);
-  const rest = Math.floor(seconds % 60);
-  if (minutes < 60) return `${minutes}:${String(rest).padStart(2, "0")} min`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} Min`;
   const hours = Math.floor(minutes / 60);
   const minuteRest = minutes % 60;
-  return `${hours}:${String(minuteRest).padStart(2, "0")}:${String(rest).padStart(2, "0")} h`;
+  return minuteRest > 0 ? `${hours} Std ${minuteRest} Min` : `${hours} Std`;
 }
 
 function formatDate(timestamp) {
   const seconds = Number(timestamp);
   if (!Number.isFinite(seconds) || seconds <= 0) return "";
-  return new Date(seconds * 1000).toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Berlin",
+  }).format(new Date(seconds * 1000));
 }
 
 function formatCount(count, relation) {

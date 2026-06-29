@@ -18,6 +18,7 @@ const SAMPLE_RESULT = {
         url_video: "https://example.com/video-sd.mp4",
         url_video_low: "https://example.com/video-low.mp4",
         url_video_hd: "https://example.com/video-hd.mp4",
+        thumbnail: "https://images.example.com/tagesschau.jpg",
         filmlisteTimestamp: 1780658340,
         id: "sample-id",
       },
@@ -156,13 +157,17 @@ describe("MSX worker routes", () => {
 
     assert.equal(response.status, 200);
     assert.equal(body.type, "list");
-    assert.equal(body.template.layout, "0,0,6,1");
+    assert.equal(body.template.layout, "0,0,4,2");
     assert.equal(body.items[0].title, "tagesschau 20:00 Uhr");
     assert.equal(body.items[0].type, "separate");
-    assert.equal(body.items[0].layout, "0,0,6,1");
+    assert.equal(body.items[0].layout, "0,0,4,2");
     assert.equal(body.items[0].action, "execute:https://worker.example/msx/play");
     assert.equal(body.items[0].data.url, "https://example.com/video-hd.mp4");
-    assert.match(body.items[0].image, /ard-de\.png$/);
+    assert.equal(body.items[0].titleHeader, "tagesschau");
+    assert.equal(body.items[0].titleFooter, "ARD • 15 Min • 05.06.2026");
+    assert.equal(body.items[0].badge, "tagesschau");
+    assert.equal(body.items[0].image, "https://images.example.com/tagesschau.jpg");
+    assert.equal(body.items[0].imageFiller, "cover");
     assert.equal(body.items.at(-1).id, "new-search");
     assert.match(body.items.at(-1).action, /^content:request:interaction:/);
   });
@@ -178,8 +183,12 @@ describe("MSX worker routes", () => {
     assert.equal(response.status, 200);
     assert.notEqual(body.items[0].id, "group-ard");
     assert.equal(body.items[0].title, "tagesschau 20:00 Uhr");
-    assert.equal(body.items[0].layout, "0,0,6,1");
-    assert.match(body.items[0].image, /ard-de\.png$/);
+    assert.equal(body.items[0].layout, "0,0,4,2");
+    assert.equal(body.items[0].titleHeader, "tagesschau");
+    assert.equal(body.items[0].titleFooter, "ARD • 15 Min • 05.06.2026");
+    assert.equal(body.items[0].badge, "tagesschau");
+    assert.equal(body.items[0].image, "https://images.example.com/tagesschau.jpg");
+    assert.equal(body.items[0].imageFiller, "cover");
   });
 
   it("filters trailer, subtitle-variant, and missing-title results", async () => {
