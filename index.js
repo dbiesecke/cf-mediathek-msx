@@ -541,11 +541,15 @@ export function buildMenu(request) {
     name: APP_NAME,
     version: APP_VERSION,
     flag: "mediathekviewweb-msx-menu",
-    cache: false,
+    cache: true,
     restore: true,
     refocus: true,
     style: "flat-separator",
-    headline: "Doku Mediathek",
+    logo: absoluteUrl(request, "/assets/logo.svg"),
+    logoSize: "medium",
+    background: absoluteUrl(request, "/assets/background.svg"),
+    transparent: true,
+    headline: "Mediathek Dokus",
     menu: [
       {
         id: "search",
