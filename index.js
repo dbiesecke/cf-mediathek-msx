@@ -40,6 +40,7 @@ const MEDIATHEK_QUERY_URL = "https://mediathekviewweb.de/api/query";
 const DEFAULT_SEARCH_SIZE = 30;
 const MAX_SEARCH_SIZE = 36;
 const RESULT_DESCRIPTION_MAX_LENGTH = 180;
+const SIMILAR_SEARCH_MAX_WORDS = 5;
 const DEFAULT_DURATION_MIN = 15;
 const SEARCH_CACHE_SECONDS = 300;
 const STATIC_CACHE_SECONDS = 3600;
@@ -834,15 +835,19 @@ function buildPlaceholderContent(request, { flag, headline, placeholderId, icon,
 
 function buildSearchInputAction(request, initInput = "") {
   const serviceUrl = absoluteUrl(request, "/msx/search", {
-    q: withDurationSyntax("{INPUT}", DEFAULT_DURATION_MIN),
+    input: withDurationSyntax("{INPUT}", DEFAULT_DURATION_MIN),
     fields: "channel,topic,title,description",
     sort: "timestamp",
     order: "desc",
-    size: DEFAULT_SEARCH_SIZE,
-  }).replace("%7BINPUT%7D", "{INPUT}");
+    limit: "{LIMIT}",
+    offset: "{OFFSET}",
+  })
+    .replaceAll("%7BINPUT%7D", "{INPUT}")
+    .replaceAll("%7BLIMIT%7D", "{LIMIT}")
+    .replaceAll("%7BOFFSET%7D", "{OFFSET}");
 
   const inputOptions = [
-    "search",
+    "search:3",
     "de",
     "Doku Suche",
     "",
@@ -1360,14 +1365,15 @@ function buildItemOptions(request, item) {
     },
   );
 
-  if (item.title) {
+  const similarQuery = buildSimilarSearchQuery(item);
+  if (similarQuery) {
     items.push({
       id: "search-similar",
       icon: "search",
       label: "Ähnliche suchen",
       color: "msx-cyan-soft",
       action: `content:${absoluteUrl(request, "/msx/search", {
-        q: withDurationSyntax(item.title, DEFAULT_DURATION_MIN),
+        q: withDurationSyntax(similarQuery, DEFAULT_DURATION_MIN),
         fields: DOCU_SEARCH_FIELDS,
         size: DEFAULT_SEARCH_SIZE,
       })}`,
@@ -1415,6 +1421,23 @@ function buildItemOptions(request, item) {
     template: TEMPLATES.optionControl,
     items,
   };
+}
+
+function buildSimilarSearchQuery(item) {
+  const title = cleanString(item?.title)
+    .replace(/\([^)]*(?:untertitel|ut|audiodeskription|ad)[^)]*\)/gi, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\b(?:folge|teil|episode|staffel)\s*\d+\b/gi, " ")
+    .replace(/\b\d{1,2}[.:]\d{2}\s*(?:uhr)?\b/gi, " ")
+    .replace(/\b\d+\s*(?:min|minute|minutes)\b/gi, " ")
+    .replace(/[–—:|/]+.*$/u, " ")
+    .replace(/[^\p{L}\p{N}äöüÄÖÜß]+/gu, " ")
+    .trim();
+
+  const words = title.split(/\s+/).filter((word) => word.length > 1);
+  if (words.length > 0) return words.slice(0, SIMILAR_SEARCH_MAX_WORDS).join(" ");
+
+  return cleanString(item?.topic);
 }
 
 async function fetchMediathek(query) {
