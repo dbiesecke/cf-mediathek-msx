@@ -9,6 +9,8 @@ const SEARCH_CACHE_SECONDS = 300;
 const STATIC_CACHE_SECONDS = 3600;
 const LOGO_BASE_URL = "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/germany/";
 const INPUT_PLUGIN_URL = "http://msx.benzac.de/interaction/input.html";
+const APP_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#21d4fd"/><stop offset="1" stop-color="#b721ff"/></linearGradient></defs><rect width="512" height="512" rx="96" fill="#101820"/><path fill="url(#g)" d="M96 150c0-30 24-54 54-54h212c30 0 54 24 54 54v150c0 30-24 54-54 54H150c-30 0-54-24-54-54z"/><path fill="#fff" d="m228 178 104 70-104 70z"/><path fill="#21d4fd" d="M160 398h192v28H160z"/></svg>`;
+const APP_BACKGROUND_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="a" cx="25%" cy="20%" r="70%"><stop stop-color="#1f7aff" stop-opacity=".75"/><stop offset="1" stop-color="#101820" stop-opacity="0"/></radialGradient><radialGradient id="b" cx="78%" cy="28%" r="65%"><stop stop-color="#b721ff" stop-opacity=".55"/><stop offset="1" stop-color="#101820" stop-opacity="0"/></radialGradient><linearGradient id="c" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#0b1118"/><stop offset="1" stop-color="#172330"/></linearGradient></defs><rect width="1920" height="1080" fill="url(#c)"/><rect width="1920" height="1080" fill="url(#a)"/><rect width="1920" height="1080" fill="url(#b)"/><g fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="2"><path d="M0 760c240-120 480-120 720 0s480 120 720 0 480-120 720 0"/><path d="M0 840c240-120 480-120 720 0s480 120 720 0 480-120 720 0"/></g></svg>`;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -458,6 +460,14 @@ export async function handleRequest(request, env = {}, ctx = {}) {
       return jsonResponse(buildHealth(request), { cacheSeconds: 30 });
     }
 
+    if (pathname === "/assets/logo.svg") {
+      return staticAssetResponse(APP_LOGO_SVG, "image/svg+xml; charset=utf-8");
+    }
+
+    if (pathname === "/assets/background.svg") {
+      return staticAssetResponse(APP_BACKGROUND_SVG, "image/svg+xml; charset=utf-8");
+    }
+
     if (pathname === "/msx/start.json") {
       return jsonResponse(buildStart(request), { cacheSeconds: STATIC_CACHE_SECONDS });
     }
@@ -509,12 +519,20 @@ export function buildStart(request) {
     name: APP_NAME,
     version: APP_VERSION,
     parameter: `menu:${absoluteUrl(request, "/msx/menu.json")}`,
+    style: "flat-separator",
+    logo: absoluteUrl(request, "/assets/logo.svg"),
+    logoSize: "medium",
+    background: absoluteUrl(request, "/assets/background.svg"),
+    transparent: true,
+    refocus: true,
+    restore: true,
+    cache: true,
     welcome: "none",
     launcher: {
       icon: "play-circle-outline",
       color: "msx-black-soft",
     },
-    note: "Media Station X 0.1.97 or higher is recommended.",
+    note: "Media Station X 0.1.166 or higher is recommended.",
   };
 }
 
@@ -1345,6 +1363,14 @@ function jsonResponse(data, options = {}) {
     status: options.status || 200,
     headers,
   });
+}
+
+function staticAssetResponse(body, contentType) {
+  const headers = new Headers(CORS_HEADERS);
+  headers.set("Content-Type", contentType);
+  headers.set("Cache-Control", `public, max-age=${STATIC_CACHE_SECONDS}`);
+  headers.set("X-Content-Type-Options", "nosniff");
+  return new Response(body, { headers });
 }
 
 function htmlResponse(html) {

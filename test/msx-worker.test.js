@@ -117,6 +117,25 @@ describe("MSX worker routes", () => {
     assert.equal(response.status, 200);
     assert.equal(body.name, "MediathekViewWeb MSX");
     assert.equal(body.parameter, "menu:https://worker.example/msx/menu.json");
+    assert.equal(body.style, "flat-separator");
+    assert.equal(body.logo, "https://worker.example/assets/logo.svg");
+    assert.equal(body.logoSize, "medium");
+    assert.equal(body.background, "https://worker.example/assets/background.svg");
+    assert.equal(body.transparent, true);
+    assert.equal(body.refocus, true);
+    assert.equal(body.restore, true);
+    assert.equal(body.cache, true);
+    assert.equal(body.note, "Media Station X 0.1.166 or higher is recommended.");
+  });
+
+  it("serves local start screen assets", async () => {
+    const logoResponse = await handleRequest(new Request("https://worker.example/assets/logo.svg"));
+    const backgroundResponse = await handleRequest(new Request("https://worker.example/assets/background.svg"));
+
+    assert.equal(logoResponse.status, 200);
+    assert.equal(logoResponse.headers.get("Content-Type"), "image/svg+xml; charset=utf-8");
+    assert.equal(backgroundResponse.status, 200);
+    assert.equal(backgroundResponse.headers.get("Content-Type"), "image/svg+xml; charset=utf-8");
   });
 
   it("builds a menu with primary navigation entries", async () => {
