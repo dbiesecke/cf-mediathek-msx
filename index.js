@@ -17,14 +17,17 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
-const PRESETS = [
+const DOCU_SEARCH_FIELDS = "topic,title,description";
+
+const QUICK_FILTERS = [
   {
     id: "latest",
+    label: "Neue Dokus",
     icon: "view-list",
-    label: "Neue Dokus nach Sendern",
+    color: "msx-blue-soft",
     params: {
       q: withDurationSyntax("doku", 20),
-      fields: "topic,title,description",
+      fields: DOCU_SEARCH_FIELDS,
       group: "channel",
       sort: "timestamp",
       order: "desc",
@@ -32,79 +35,122 @@ const PRESETS = [
   },
   {
     id: "arte",
+    label: "ARTE",
     icon: "palette",
-    label: "ARTE Dokus",
-    params: { channel: "ARTE.DE", q: withDurationSyntax("doku", 20), fields: "topic,title,description" },
+    color: "msx-red-soft",
+    params: { channel: "ARTE.DE", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
   },
   {
     id: "zdfinfo",
+    label: "ZDFinfo",
     icon: "travel-explore",
-    label: "ZDFinfo Dokus",
-    params: { channel: "ZDFinfo", q: withDurationSyntax("doku", 20), fields: "topic,title,description" },
+    color: "msx-yellow-soft",
+    params: { channel: "ZDFinfo", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
   },
   {
-    id: "3sat",
-    icon: "theaters",
-    label: "3sat Dokus",
-    params: { channel: "3Sat", q: withDurationSyntax("doku", 20), fields: "topic,title,description" },
-  },
-  {
-    id: "phoenix",
-    icon: "public",
-    label: "phoenix Dokus",
-    params: { channel: "PHOENIX", q: withDurationSyntax("doku", 20), fields: "topic,title,description" },
-  },
-  {
-    id: "science",
-    icon: "science",
-    label: "Wissenschaft",
-    params: { q: withDurationSyntax("wissenschaft", 20), fields: "topic,title,description", group: "channel" },
+    id: "society",
+    label: "Gesellschaft",
+    icon: "groups",
+    color: "msx-purple-soft",
+    params: { q: withDurationSyntax("gesellschaft", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" },
   },
   {
     id: "history",
-    icon: "history-edu",
     label: "Geschichte",
-    params: { q: withDurationSyntax("geschichte", 20), fields: "topic,title,description", group: "channel" },
+    icon: "history-edu",
+    color: "msx-yellow-soft",
+    params: { q: withDurationSyntax("geschichte", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" },
+  },
+  {
+    id: "science",
+    label: "Wissenschaft",
+    icon: "science",
+    color: "msx-cyan-soft",
+    params: { q: withDurationSyntax("wissenschaft", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" },
+  },
+  {
+    id: "politics",
+    label: "Politik",
+    icon: "account-balance",
+    color: "msx-blue-soft",
+    params: { q: withDurationSyntax("politik", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" },
+  },
+  {
+    id: "nature",
+    label: "Natur",
+    icon: "terrain",
+    color: "msx-green-soft",
+    params: { q: withDurationSyntax("natur", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" },
+  },
+  {
+    id: "true-crime",
+    label: "True Crime",
+    icon: "local-police",
+    color: "msx-red-soft",
+    params: { q: withDurationSyntax("true crime", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" },
   },
 ];
 
 const DOCU_CHANNELS = [
   {
     id: "arte",
-    channel: "ARTE.DE",
     label: "ARTE",
+    icon: "palette",
+    color: "msx-red-soft",
+    params: { channel: "ARTE.DE", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
     description: "Kultur, Gesellschaft, Wissenschaft und internationale Dokumentationen.",
   },
   {
     id: "zdfinfo",
-    channel: "ZDFinfo",
     label: "ZDFinfo",
+    icon: "travel-explore",
+    color: "msx-yellow-soft",
+    params: { channel: "ZDFinfo", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
     description: "Reportagen, History, True Crime, Politik und Wissen.",
   },
   {
     id: "3sat",
-    channel: "3Sat",
     label: "3sat",
+    icon: "theaters",
+    color: "msx-red-soft",
+    params: { channel: "3Sat", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
     description: "Dokumentarfilm, Kultur, Gesellschaft und Wissen.",
   },
   {
     id: "phoenix",
-    channel: "PHOENIX",
     label: "phoenix",
+    icon: "public",
+    color: "msx-red-soft",
+    params: { channel: "PHOENIX", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
     description: "Politik, Zeitgeschichte und lange Dokumentationen.",
   },
   {
     id: "ard-alpha",
-    channel: "ARD alpha",
     label: "ARD alpha",
+    icon: "school",
+    color: "msx-blue-soft",
+    params: { channel: "ARD alpha", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
     description: "Bildung, Wissen und Wissenschaft.",
   },
   {
     id: "dw",
-    channel: "DW",
     label: "DW",
+    icon: "public",
+    color: "msx-blue-soft",
+    params: { channel: "DW", q: withDurationSyntax("doku", 20), fields: DOCU_SEARCH_FIELDS },
     description: "Internationale Perspektiven und Reportagen.",
   },
+];
+
+const TOPIC_FILTERS = [
+  { id: "society", label: "Gesellschaft", icon: "groups", color: "msx-purple-soft", params: { q: withDurationSyntax("gesellschaft", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "history", label: "Geschichte", icon: "history-edu", color: "msx-yellow-soft", params: { q: withDurationSyntax("geschichte", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "science", label: "Wissenschaft", icon: "science", color: "msx-cyan-soft", params: { q: withDurationSyntax("wissenschaft", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "politics", label: "Politik", icon: "account-balance", color: "msx-blue-soft", params: { q: withDurationSyntax("politik", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "nature", label: "Natur", icon: "terrain", color: "msx-green-soft", params: { q: withDurationSyntax("natur", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "true-crime", label: "True Crime", icon: "local-police", color: "msx-red-soft", params: { q: withDurationSyntax("true crime", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "culture", label: "Kultur", icon: "theaters", color: "msx-red-soft", params: { q: withDurationSyntax("kultur", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
+  { id: "travel", label: "Reisen", icon: "explore", color: "msx-cyan-soft", params: { q: withDurationSyntax("reise", 20), fields: DOCU_SEARCH_FIELDS, group: "channel" } },
 ];
 
 const CHANNEL_METADATA = [
@@ -468,7 +514,7 @@ export function buildMenu(request) {
         label: "⭐ Neu",
         data: absoluteUrl(request, "/msx/search", {
           q: withDurationSyntax("doku", 20),
-          fields: "topic,title,description",
+          fields: DOCU_SEARCH_FIELDS,
           sort: "timestamp",
           order: "desc",
           size: MAX_SEARCH_SIZE,
@@ -511,24 +557,14 @@ function buildSearchPromptContent(request) {
         label: "Suchbegriff eingeben",
         action: buildSearchInputAction(request),
       },
-      {
-        id: "all-latest",
-        icon: "view-list",
-        label: "Neue Dokus nach Sendern",
+      ...QUICK_FILTERS.map((filter) => ({
+        id: `quick-${filter.id}`,
+        icon: filter.icon,
+        label: filter.label,
+        color: filter.color,
         action: `content:${absoluteUrl(request, "/msx/search", {
-          q: withDurationSyntax("doku", 20),
-          fields: "topic,title,description",
-          group: "channel",
-          size: MAX_SEARCH_SIZE,
-        })}`,
-      },
-      ...PRESETS.filter((preset) => preset.id !== "latest").map((preset) => ({
-        id: `preset-${preset.id}`,
-        icon: preset.icon,
-        label: preset.label,
-        action: `content:${absoluteUrl(request, "/msx/search", {
-          ...preset.params,
-          size: DEFAULT_SEARCH_SIZE,
+          ...filter.params,
+          size: filter.id === "latest" ? MAX_SEARCH_SIZE : DEFAULT_SEARCH_SIZE,
         })}`,
       })),
     ],
@@ -551,20 +587,18 @@ function buildChannelsContent(request) {
       enumerate: false,
     },
     items: DOCU_CHANNELS.map((channel) => {
-      const meta = getChannelMeta(channel.channel);
+      const meta = getChannelMeta(channel.params.channel);
       return {
         id: `channel-${channel.id}`,
-        icon: meta.icon,
+        icon: channel.icon || meta.icon,
         image: meta.logoUrl,
         badge: "Doku",
-        badgeColor: meta.color,
+        badgeColor: channel.color || meta.color,
         title: channel.label,
         titleHeader: meta.description,
         text: channel.description,
         action: `content:${absoluteUrl(request, "/msx/search", {
-          channel: channel.channel,
-          q: withDurationSyntax("doku", 20),
-          fields: "topic,title,description",
+          ...channel.params,
           size: DEFAULT_SEARCH_SIZE,
         })}`,
       };
@@ -587,14 +621,15 @@ function buildTopicsContent(request) {
       color: "msx-glass",
       enumerate: false,
     },
-    items: PRESETS.filter((preset) => preset.id !== "latest").map((preset) => ({
-      id: `topic-${preset.id}`,
-      icon: preset.icon,
-      title: preset.label,
+    items: TOPIC_FILTERS.map((filter) => ({
+      id: `topic-${filter.id}`,
+      icon: filter.icon,
+      badgeColor: filter.color,
+      title: filter.label,
       titleHeader: "Schnellzugriff",
       text: "Dokumentationen und Reportagen direkt zu diesem Thema anzeigen.",
       action: `content:${absoluteUrl(request, "/msx/search", {
-        ...preset.params,
+        ...filter.params,
         size: DEFAULT_SEARCH_SIZE,
       })}`,
     })),
