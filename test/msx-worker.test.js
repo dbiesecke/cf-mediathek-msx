@@ -156,10 +156,12 @@ describe("MSX worker routes", () => {
     assert.equal(body.menu[0].id, "search");
     assert.match(body.menu[0].data.items[0].action, /^content:request:interaction:/);
     assert.match(body.menu[0].data.items[0].action, /channel(%2C|,)topic(%2C|,)title(%2C|,)description/);
-    assert.match(body.menu[0].data.items[0].action, /q=\{INPUT\}\+%3E15/);
+    assert.match(body.menu[0].data.items[0].action, /input=\{INPUT\}\+%3E15/);
+    assert.match(body.menu[0].data.items[0].action, /\|search:3\|de\|/);
     assert.match(body.menu[0].data.items[0].action, /sort=timestamp/);
     assert.match(body.menu[0].data.items[0].action, /order=desc/);
-    assert.match(body.menu[0].data.items[0].action, /size=30/);
+    assert.match(body.menu[0].data.items[0].action, /limit=\{LIMIT\}/);
+    assert.match(body.menu[0].data.items[0].action, /offset=\{OFFSET\}/);
     assert.match(body.menu[0].data.items[0].action, /Laufzeit wie >15/);
     assert.doesNotMatch(body.menu[0].data.items[0].action, /group=channel/);
     assert.doesNotMatch(body.menu[0].data.items[0].action, /duration_min=15/);
@@ -221,6 +223,9 @@ describe("MSX worker routes", () => {
         "open-website",
       ],
     );
+    const similarAction = body.items[0].options.items.find((item) => item.id === "search-similar").action;
+    assert.match(similarAction, /q=tagesschau\+%3E15/);
+    assert.doesNotMatch(similarAction, /20%3A00/);
     assert.match(
       body.items[0].options.items.find((item) => item.id === "more-from-channel").action,
       /^content:https:\/\/worker\.example\/msx\/search\?channel=ARD/,
