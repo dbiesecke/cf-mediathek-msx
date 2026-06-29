@@ -17,6 +17,46 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
+const TEMPLATES = {
+  heroControl: {
+    type: "control",
+    layout: "0,0,12,1",
+    color: "msx-glass",
+  },
+  quickTile: {
+    type: "separate",
+    layout: "0,0,4,2",
+    color: "msx-glass",
+    enumerate: false,
+    round: false,
+  },
+  channelTile: {
+    type: "separate",
+    layout: "0,0,4,2",
+    color: "msx-glass",
+    enumerate: false,
+    imageFiller: "fit",
+  },
+  resultCard: {
+    type: "separate",
+    layout: "0,0,4,2",
+    color: "msx-black-soft",
+    round: false,
+    compress: true,
+    enumerate: false,
+  },
+  actionControl: {
+    type: "control",
+    layout: "0,0,4,2",
+    color: "msx-glass",
+  },
+  optionControl: {
+    type: "control",
+    layout: "0,0,8,1",
+    color: "msx-glass",
+  },
+};
+
 const DOCU_SEARCH_FIELDS = "topic,title,description";
 
 const QUICK_FILTERS = [
@@ -500,7 +540,7 @@ export function buildMenu(request) {
         id: "channels",
         icon: "apps",
         label: "📺 Sender",
-        data: buildChannelsContent(request),
+        data: buildDocuChannelsContent(request),
       },
       {
         id: "topics",
@@ -551,17 +591,15 @@ function buildSearchPromptContent(request) {
     },
     items: [
       {
+        ...TEMPLATES.heroControl,
         id: "search-input",
-        type: "control",
-        layout: "0,0,12,1",
         icon: "search",
         label: "Was möchtest du sehen?",
         action: buildSearchInputAction(request),
       },
       ...QUICK_FILTERS.map((filter) => ({
+        ...TEMPLATES.quickTile,
         id: `quick-${filter.id}`,
-        type: "separate",
-        layout: "0,0,4,2",
         icon: filter.icon,
         badge: "Schnellfilter",
         badgeColor: filter.color,
@@ -576,7 +614,7 @@ function buildSearchPromptContent(request) {
   };
 }
 
-function buildChannelsContent(request) {
+function buildDocuChannelsContent(request) {
   return {
     name: APP_NAME,
     version: APP_VERSION,
@@ -585,12 +623,7 @@ function buildChannelsContent(request) {
     restore: true,
     type: "list",
     headline: "Doku-Sender",
-    template: {
-      type: "separate",
-      layout: "0,0,6,2",
-      color: "msx-glass",
-      enumerate: false,
-    },
+    template: TEMPLATES.channelTile,
     items: DOCU_CHANNELS.map((channel) => {
       const meta = getChannelMeta(channel.params.channel);
       return {
@@ -989,10 +1022,8 @@ function buildSearchContent(request, mediathekQuery, result) {
     nextParams.set("offset", String(offset + size));
     nextParams.set("size", String(size));
     items.push({
+      ...TEMPLATES.actionControl,
       id: "more-results",
-      type: "control",
-      layout: "0,0,4,2",
-      color: "msx-glass",
       icon: "plus",
       label: `Mehr laden (${offset + size}/${formatCount(total, queryInfo.totalRelation)})`,
       action: `content:${absoluteUrl(request, "/msx/search", nextParams)}`,
@@ -1000,10 +1031,8 @@ function buildSearchContent(request, mediathekQuery, result) {
   }
 
   items.push({
+    ...TEMPLATES.actionControl,
     id: "new-search",
-    type: "control",
-    layout: "0,0,4,2",
-    color: "msx-glass",
     icon: "search",
     label: "Neue Suche",
     action: buildSearchInputAction(request, sourceUrl.searchParams.get("input") || sourceUrl.searchParams.get("q") || ""),
@@ -1019,14 +1048,7 @@ function buildSearchContent(request, mediathekQuery, result) {
     type: "list",
     headline: buildHeadline(sourceUrl, queryInfo),
     extension: buildExtension(queryInfo),
-    template: {
-      type: "separate",
-      layout: "0,0,4,2",
-      color: "msx-black-soft",
-      round: false,
-      compress: true,
-      enumerate: false,
-    },
+    template: TEMPLATES.resultCard,
     items,
   };
 }
@@ -1057,12 +1079,8 @@ function buildMediathekItem(request, item, index, quality) {
   const docuIcon = selectDocumentaryIcon(`${topic} ${title} ${description}`) || channelMeta.icon;
 
   return {
+    ...TEMPLATES.resultCard,
     id: createItemId(item, index),
-    type: "separate",
-    layout: "0,0,4,2",
-    color: "msx-black-soft",
-    round: false,
-    compress: true,
     icon: image ? undefined : docuIcon,
     iconSize: image ? undefined : "small",
     image,
@@ -1169,11 +1187,7 @@ function buildItemOptions(request, item) {
 
   return {
     caption: "Optionen",
-    template: {
-      type: "control",
-      layout: "0,0,8,1",
-      color: "msx-glass",
-    },
+    template: TEMPLATES.optionControl,
     items,
   };
 }
