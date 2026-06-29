@@ -1,5 +1,40 @@
-const APP_NAME = "MediathekViewWeb MSX";
+const APP_NAME = "Mediathek Dokus";
 const APP_VERSION = "1.0.0";
+const APP_BRAND_COLOR = "msx-blue-soft";
+const APP_ACCENT_COLOR = "msx-cyan-soft";
+const APP_LOGO_URL = "/assets/logo.svg";
+const APP_BACKGROUND_URL = "/assets/background.svg";
+const BADGE_COLORS = {
+  default: "msx-blue-soft",
+  latest: "msx-blue-soft",
+  docu: "msx-cyan-soft",
+  channel: "msx-blue-soft",
+  society: "msx-purple-soft",
+  gesellschaft: "msx-purple-soft",
+  history: "msx-yellow-soft",
+  geschichte: "msx-yellow-soft",
+  science: "msx-cyan-soft",
+  wissenschaft: "msx-cyan-soft",
+  politics: "msx-blue-soft",
+  politik: "msx-blue-soft",
+  nature: "msx-green-soft",
+  natur: "msx-green-soft",
+  "true-crime": "msx-red-soft",
+  "true crime": "msx-red-soft",
+  crime: "msx-red-soft",
+  culture: "msx-red-soft",
+  kultur: "msx-red-soft",
+  travel: "msx-cyan-soft",
+  reisen: "msx-cyan-soft",
+  reise: "msx-cyan-soft",
+  arte: "msx-red-soft",
+  zdfinfo: "msx-yellow-soft",
+  zdf: "msx-yellow-soft",
+  "3sat": "msx-red-soft",
+  phoenix: "msx-red-soft",
+  "ard alpha": "msx-blue-soft",
+  dw: "msx-blue-soft",
+};
 const MEDIATHEK_QUERY_URL = "https://mediathekviewweb.de/api/query";
 
 const DEFAULT_SEARCH_SIZE = 18;
@@ -460,11 +495,11 @@ export async function handleRequest(request, env = {}, ctx = {}) {
       return jsonResponse(buildHealth(request), { cacheSeconds: 30 });
     }
 
-    if (pathname === "/assets/logo.svg") {
+    if (pathname === APP_LOGO_URL) {
       return staticAssetResponse(APP_LOGO_SVG, "image/svg+xml; charset=utf-8");
     }
 
-    if (pathname === "/assets/background.svg") {
+    if (pathname === APP_BACKGROUND_URL) {
       return staticAssetResponse(APP_BACKGROUND_SVG, "image/svg+xml; charset=utf-8");
     }
 
@@ -520,9 +555,9 @@ export function buildStart(request) {
     version: APP_VERSION,
     parameter: `menu:${absoluteUrl(request, "/msx/menu.json")}`,
     style: "flat-separator",
-    logo: absoluteUrl(request, "/assets/logo.svg"),
+    logo: appLogoUrl(request),
     logoSize: "medium",
-    background: absoluteUrl(request, "/assets/background.svg"),
+    background: appBackgroundUrl(request),
     transparent: true,
     refocus: true,
     restore: true,
@@ -530,7 +565,7 @@ export function buildStart(request) {
     welcome: "none",
     launcher: {
       icon: "play-circle-outline",
-      color: "msx-black-soft",
+      color: APP_BRAND_COLOR,
     },
     note: "Media Station X 0.1.166 or higher is recommended.",
   };
@@ -545,11 +580,11 @@ export function buildMenu(request) {
     restore: true,
     refocus: true,
     style: "flat-separator",
-    logo: absoluteUrl(request, "/assets/logo.svg"),
+    logo: appLogoUrl(request),
     logoSize: "medium",
-    background: absoluteUrl(request, "/assets/background.svg"),
+    background: appBackgroundUrl(request),
     transparent: true,
-    headline: "Mediathek Dokus",
+    headline: APP_NAME,
     menu: [
       {
         id: "search",
@@ -608,9 +643,10 @@ function buildSearchPromptContent(request) {
     type: "list",
     headline: "Doku Suche",
     template: {
-      color: "msx-glass",
+      color: APP_ACCENT_COLOR,
       enumerate: false,
     },
+    background: appBackgroundUrl(request),
     items: [
       {
         ...TEMPLATES.heroControl,
@@ -624,7 +660,7 @@ function buildSearchPromptContent(request) {
         id: `quick-${filter.id}`,
         icon: filter.icon,
         badge: "Schnellfilter",
-        badgeColor: filter.color,
+        badgeColor: getBadgeColor(filter.id, filter.color),
         title: filter.label,
         titleFooter: "Direkt zur Ergebnisliste",
         action: `content:${absoluteUrl(request, "/msx/search", {
@@ -645,7 +681,9 @@ function buildDocuChannelsContent(request) {
     restore: true,
     type: "list",
     headline: "Doku-Sender",
-    template: TEMPLATES.channelTile,
+    logo: appLogoUrl(request),
+    background: appBackgroundUrl(request),
+    template: { ...TEMPLATES.channelTile, color: APP_BRAND_COLOR },
     items: DOCU_CHANNELS.map((channel) => {
       const meta = getChannelMeta(channel.params.channel);
       return {
@@ -653,7 +691,7 @@ function buildDocuChannelsContent(request) {
         icon: channel.icon || meta.icon,
         image: meta.logoUrl,
         badge: "Doku",
-        badgeColor: channel.color || meta.color,
+        badgeColor: getBadgeColor(channel.id, channel.color || meta.color),
         title: channel.label,
         titleHeader: meta.description,
         text: channel.description,
@@ -684,7 +722,7 @@ function buildTopicsContent(request) {
     items: TOPIC_FILTERS.map((filter) => ({
       id: `topic-${filter.id}`,
       icon: filter.icon,
-      badgeColor: filter.color,
+      badgeColor: getBadgeColor(filter.id, filter.color),
       title: filter.label,
       titleHeader: "Schnellzugriff",
       text: "Dokumentationen und Reportagen direkt zu diesem Thema anzeigen.",
@@ -1069,6 +1107,8 @@ function buildSearchContent(request, mediathekQuery, result) {
     refocus: true,
     type: "list",
     headline: buildHeadline(sourceUrl, queryInfo),
+    logo: appLogoUrl(request),
+    background: appBackgroundUrl(request),
     extension: buildExtension(queryInfo),
     template: TEMPLATES.resultCard,
     items,
@@ -1111,7 +1151,7 @@ function buildMediathekItem(request, item, index, quality) {
     imageOverlay: hasPreviewImage ? 0.35 : 0,
     imageColor: "msx-black",
     badge: topic || channel,
-    badgeColor: channelMeta.color || channelColor(channel),
+    badgeColor: getMediathekBadgeColor({ topic, channel, title, description }, channelMeta.color || channelColor(channel)),
     title,
     titleHeader,
     titleFooter,
@@ -1590,6 +1630,36 @@ function minutesToSeconds(minutes) {
 
 function parseBoolean(value) {
   return value === "1" || value === "true" || value === "yes";
+}
+
+
+function appLogoUrl(request) {
+  return absoluteUrl(request, APP_LOGO_URL);
+}
+
+function appBackgroundUrl(request) {
+  return absoluteUrl(request, APP_BACKGROUND_URL);
+}
+
+function getBadgeColor(key, fallback = BADGE_COLORS.default) {
+  const normalized = normalizeBadgeKey(key);
+  return BADGE_COLORS[normalized] || fallback || BADGE_COLORS.default;
+}
+
+function getMediathekBadgeColor({ topic, channel, title, description }, fallback) {
+  const topicColor = getBadgeColor(topic, "");
+  if (topicColor) return topicColor;
+
+  const text = normalizeBadgeKey(`${topic} ${title} ${description}`);
+  for (const [key, color] of Object.entries(BADGE_COLORS)) {
+    if (key !== "default" && text.includes(key)) return color;
+  }
+
+  return getBadgeColor(channel, fallback);
+}
+
+function normalizeBadgeKey(value) {
+  return normalizeChannel(value);
 }
 
 function getChannelMeta(channel) {

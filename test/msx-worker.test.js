@@ -115,7 +115,7 @@ describe("MSX worker routes", () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.name, "MediathekViewWeb MSX");
+    assert.equal(body.name, "Mediathek Dokus");
     assert.equal(body.parameter, "menu:https://worker.example/msx/menu.json");
     assert.equal(body.style, "flat-separator");
     assert.equal(body.logo, "https://worker.example/assets/logo.svg");
